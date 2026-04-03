@@ -1,17 +1,11 @@
-//const express = require('express');
-//const router = express.Router();
-//const controller = require('../controllers/product.server.controllers');
-//
-//router.post('/', controller.create);
-//router.get('/', controller.list);
-//
-//module.exports = router;
+const products = require('../controllers/product.server.controllers');
 
-const express = require('express');
-const router = express.Router();
-const controller = require('../controllers/product.server.controllers');
+module.exports = function(app) {
+    app.route('/api/products')
+        .get(products.list)
+        .post(products.create);
 
-router.post('/', controller.create);
-router.get('/', controller.list);
-
-module.exports = router;
+    app.route('/api/products/:product_id')
+        .get(products.getOne)
+        .delete(products.remove);
+};

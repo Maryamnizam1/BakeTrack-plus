@@ -1,8 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const waste = require('../controllers/waste.server.controllers');
 
-router.get('/', (req, res) => {
-    res.send("Waste route working");
-});
+module.exports = function(app) {
+    app.route('/api/waste')
+        .get(waste.list)
+        .post(waste.create);
 
-module.exports = router;
+    app.route('/api/waste/product/:product_id')
+        .get(waste.getByProduct);
+};

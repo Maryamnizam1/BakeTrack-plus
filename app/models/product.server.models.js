@@ -1,26 +1,41 @@
-//const db = require('../../database');
-//
-//exports.create = (name, category, callback) => {
-//    const query = `INSERT INTO products (name, category) VALUES (?, ?)`;
-//    db.run(query, [name, category], function(err) {
-//        callback(err, this.lastID);
-//    });
-//};
-//
-//exports.getAll = (callback) => {
-//    const query = `SELECT * FROM products`;
-//    db.all(query, [], callback);
-//};
-
 const db = require('../../database');
 
-exports.create = (name, category, callback) => {
-    const query = `INSERT INTO products (name, category) VALUES (?, ?)`;
-    db.run(query, [name, category], function(err) {
-        // ✅ MUST call callback
-        callback(err, this.lastID);
+const create = (name, category, batch_size, done) => {
+    const sql = 'INSERT INTO products (name, category, batch_size) VALUES (?, ?, ?)';
+    db.run(sql, [name, category, batch_size], function(err) {
+        if (err) return done(err);
+        return done(null, this.lastID);
     });
 };
-exports.getAll = (callback) => {
-    db.all('SELECT * FROM products', [], callback);
+
+const getAll = (done) => {
+    const sql = 'SELECT * FROM products ORDER BY name';
+    db.all(sql, [], (err, rows) => {
+        if (err) return done(err);
+        return done(null, rows);
+    });
+};
+
+const getById = (product_id, done) => {
+    const sql = 'SELECT * FROM products WHERE id = ?';
+    db.get(sql, [product_id], (err, row) => {
+        if (err) return done(err);
+        if (!row) return done(404);
+        return done(null, row);
+    });
+};
+
+const remove = (product_id, done) => {
+    const sql = 'DELETE FROM products WHERE id = ?';
+    db.run(sql, [product_id], (err) => {
+        if (err) return done(err);
+        return done(null);
+    });
+};
+
+module.exports = {
+    create: create,
+    getAll: getAll,
+    getById: getById,
+    remove: remove
 };

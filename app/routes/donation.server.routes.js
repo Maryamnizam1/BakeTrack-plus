@@ -1,8 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const donations = require('../controllers/donation.server.controllers');
 
-router.get('/', (req, res) => {
-    res.send("Donations route working");
-});
+module.exports = function(app) {
+    app.route('/api/donations')
+        .get(donations.list)
+        .post(donations.create);
 
-module.exports = router;
+    app.route('/api/donations/charity/:charity_name')
+        .get(donations.getByCharity);
+};

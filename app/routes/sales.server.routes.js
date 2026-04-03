@@ -1,8 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const sales = require('../controllers/sales.server.controllers');
 
-router.get('/', (req, res) => {
-    res.send("Sales route working");
-});
+module.exports = function(app) {
+    app.route('/api/sales')
+        .get(sales.list)
+        .post(sales.create);
 
-module.exports = router;
+    app.route('/api/sales/product/:product_id')
+        .get(sales.getByProduct);
+};
