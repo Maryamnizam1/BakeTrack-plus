@@ -35,7 +35,7 @@ require('./app/routes/sales.server.routes')(app);
 require('./app/routes/waste.server.routes')(app);
 require('./app/routes/donation.server.routes')(app);
 require('./app/routes/forecast.server.routes')(app);
-
+require('./app/routes/user.server.routes')(app);
 // Default response for any other request
 app.use((req, res) => {
     res.sendStatus(404);
