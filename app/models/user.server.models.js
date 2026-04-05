@@ -71,11 +71,19 @@ const getIdFromToken = (token, done) => {
     });
 };
 
+const getBakeryName = (user_id, done) => {
+    db.get('SELECT bakery_name FROM users WHERE user_id = ?', [user_id], (err, row) => {
+        if (err) return done(err);
+        return done(null, row ? row.bakery_name : '');
+    });
+};
+
 module.exports = {
     register: register,
     login: login,
     setToken: setToken,
     getToken: getToken,
     removeToken: removeToken,
-    getIdFromToken: getIdFromToken
+    getIdFromToken: getIdFromToken,
+    getBakeryName: getBakeryName
 };

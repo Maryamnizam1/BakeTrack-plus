@@ -32,11 +32,15 @@ const login = (req, res) => {
         User.getToken(user_id, (err, token) => {
             if (err) return res.sendStatus(500);
             if (token) {
-                return res.status(200).send({ user_id, session_token: token });
+                User.getBakeryName(user_id, (err, bakery_name) => {
+                    return res.status(200).send({ user_id, session_token: token, bakery_name });
+                });
             } else {
                 User.setToken(user_id, (err, token) => {
                     if (err) return res.sendStatus(500);
-                    return res.status(200).send({ user_id, session_token: token });
+                    User.getBakeryName(user_id, (err, bakery_name) => {
+                        return res.status(200).send({ user_id, session_token: token, bakery_name });
+                    });
                 });
             }
         });
