@@ -3,7 +3,10 @@
     <nav class="navbar" v-if="isLoggedIn">
       <div class="navbar-container">
         <div class="navbar-brand">
-          <span class="logo-text">BakeTrack<span class="plus">+</span></span>
+          <div class="brand-stack">
+            <span class="logo-text">BakeTrack<span class="plus">+</span></span>
+            <span class="bakery-name" v-if="bakeryName">{{ bakeryName }}</span>
+          </div>
         </div>
         <div class="navbar-links">
           <router-link to="/dashboard">Dashboard</router-link>
@@ -30,12 +33,14 @@ export default {
   data() {
     return {
       isLoggedIn: false,
+      bakeryName: '',
       error: '',
     }
   },
   methods: {
     handleLogin() {
       this.isLoggedIn = !!localStorage.getItem('session_token')
+      this.bakeryName = localStorage.getItem('bakery_name') || ''
     },
     logout() {
       const token = localStorage.getItem('session_token')
@@ -52,6 +57,7 @@ export default {
           localStorage.removeItem('user_id')
           localStorage.removeItem('bakery_name')
           this.isLoggedIn = false
+          this.bakeryName = ''
           this.$router.push('/')
         })
         .catch(() => {
@@ -59,11 +65,13 @@ export default {
           localStorage.removeItem('user_id')
           localStorage.removeItem('bakery_name')
           this.isLoggedIn = false
+          this.bakeryName = ''
           this.$router.push('/')
         })
     },
     checkLogin() {
       this.isLoggedIn = !!localStorage.getItem('session_token')
+      this.bakeryName = localStorage.getItem('bakery_name') || ''
     },
   },
   created() {
@@ -117,6 +125,20 @@ body {
 
 .plus {
   color: #f4a623;
+}
+
+.brand-stack {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.bakery-name {
+  color: #f4a623;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .navbar-links {

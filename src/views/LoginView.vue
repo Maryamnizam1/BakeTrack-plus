@@ -85,6 +85,7 @@ export default {
         .then((res) => {
           localStorage.setItem('session_token', res.data.session_token)
           localStorage.setItem('user_id', res.data.user_id)
+          localStorage.setItem('bakery_name', res.data.bakery_name)
           this.$emit('login')
           this.$router.push('/dashboard')
         })
