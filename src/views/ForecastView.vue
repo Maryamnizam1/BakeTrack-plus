@@ -1,63 +1,60 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1>📊 Forecast</h1>
-    </div>
-
-    <!-- Date Picker -->
-    <div class="date-card">
-      <h2>Select a date to get production recommendations</h2>
-      <div class="date-picker">
-        <input v-model="selectedDate" type="date" @change="loadForecast" />
-        <button class="btn-primary" @click="loadForecast">Get Forecast</button>
+  <div class="page-wrapper">
+    <div class="page-container">
+      <div class="page-header">
+        <h1>Production Forecast</h1>
       </div>
-    </div>
 
-    <!-- Forecast Results -->
-    <em v-if="loading">Generating forecast...</em>
-    <div v-else>
-      <div v-if="forecasts.length === 0" class="empty-state">
-        No forecast available. Make sure you have products and sales data!
-      </div>
-      <div v-else>
-        <div class="forecast-summary">
-          <h2>📅 Forecast for {{ formattedDate }} — {{ dayOfWeek }}</h2>
+      <!-- Date Picker -->
+      <div class="date-card">
+        <h2>Select a date to get production recommendations</h2>
+        <div class="date-picker">
+          <input v-model="selectedDate" type="date" @change="loadForecast" />
+          <button class="btn-primary" @click="loadForecast">Get Forecast</button>
         </div>
-        <div class="forecast-grid">
-          <div v-for="forecast in forecasts" :key="forecast.product_id" class="forecast-card">
-            <div class="forecast-header">
-              <span class="forecast-icon">🍞</span>
-              <h3>{{ forecast.product_name }}</h3>
+      </div>
+
+      <!-- Forecast Results -->
+      <em v-if="loading">Generating forecast...</em>
+      <div v-else>
+        <div v-if="forecasts.length === 0" class="empty-state">
+          No forecast available. Make sure you have products and sales data!
+        </div>
+        <div v-else>
+          <div class="forecast-summary">
+            <h2>Forecast for {{ formattedDate }} — {{ dayOfWeek }}</h2>
+          </div>
+          <div class="forecast-grid">
+            <div v-for="forecast in forecasts" :key="forecast.product_id" class="forecast-card">
+              <div class="forecast-header">
+                <h3>{{ forecast.product_name }}</h3>
+                <span class="forecast-category">{{ forecast.category }}</span>
+              </div>
+              <div class="forecast-recommendation">
+                <span class="recommendation-number">{{ forecast.recommended_quantity }}</span>
+                <span class="recommendation-label">units to bake</span>
+              </div>
+              <div class="forecast-stats">
+                <div class="stat-row">
+                  <span class="stat-label">Avg Daily Sales</span>
+                  <span class="stat-value">{{ forecast.avg_daily_sales }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Avg Daily Waste</span>
+                  <span class="stat-value waste">{{ forecast.avg_daily_waste }}</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Data Points</span>
+                  <span class="stat-value">{{ forecast.data_points_used }}</span>
+                </div>
+              </div>
             </div>
-            <div class="forecast-recommendation">
-              <span class="recommendation-number">{{ forecast.recommended_quantity }}</span>
-              <span class="recommendation-label">units to bake</span>
-            </div>
-            <div class="forecast-breakdown">
-              <div class="breakdown-item">
-                <span class="breakdown-label">Avg Daily Sales</span>
-                <span class="breakdown-value">{{ forecast.avg_daily_sales }}</span>
-              </div>
-              <div class="breakdown-item">
-                <span class="breakdown-label">Avg Daily Waste</span>
-                <span class="breakdown-value waste">{{ forecast.avg_daily_waste }}</span>
-              </div>
-              <div class="breakdown-item">
-                <span class="breakdown-label">Day Multiplier</span>
-                <span class="breakdown-value">x{{ forecast.day_multiplier }}</span>
-              </div>
-              <div class="breakdown-item">
-                <span class="breakdown-label">Season Multiplier</span>
-                <span class="breakdown-value">x{{ forecast.seasonality_multiplier }}</span>
-              </div>
-            </div>
-            <div class="data-points">Based on {{ forecast.data_points_used }} data points</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div v-if="error" class="error-message">{{ error }}</div>
+      <div v-if="error" class="error-message">{{ error }}</div>
+    </div>
   </div>
 </template>
 
@@ -93,7 +90,6 @@ export default {
     loadForecast() {
       this.loading = true
       this.error = ''
-
       axios
         .get(`${API}/forecast?date=${this.selectedDate}`)
         .then((res) => {
@@ -113,6 +109,12 @@ export default {
 </script>
 
 <style scoped>
+.page-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
 .page-container {
   padding: 1rem 0;
 }
@@ -201,20 +203,20 @@ export default {
 }
 
 .forecast-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   margin-bottom: 1rem;
-}
-
-.forecast-icon {
-  font-size: 1.5rem;
 }
 
 .forecast-header h3 {
   font-size: 1rem;
   color: #2c2c2c;
   font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.forecast-category {
+  font-size: 0.8rem;
+  color: #888;
+  text-transform: capitalize;
 }
 
 .forecast-recommendation {
@@ -237,42 +239,32 @@ export default {
   font-size: 0.85rem;
 }
 
-.forecast-breakdown {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.forecast-stats {
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
 }
 
-.breakdown-item {
-  background: #f5f0e8;
-  border-radius: 6px;
-  padding: 0.5rem;
-  text-align: center;
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f5f0e8;
+  font-size: 0.85rem;
 }
 
-.breakdown-label {
-  display: block;
-  font-size: 0.7rem;
+.stat-label {
   color: #888;
-  margin-bottom: 0.2rem;
 }
 
-.breakdown-value {
-  font-size: 0.9rem;
+.stat-value {
   font-weight: 600;
   color: #6b4226;
 }
 
-.breakdown-value.waste {
+.stat-value.waste {
   color: #e53935;
-}
-
-.data-points {
-  font-size: 0.75rem;
-  color: #888;
-  text-align: center;
-  font-style: italic;
 }
 
 .empty-state {

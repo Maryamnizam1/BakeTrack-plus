@@ -35,15 +35,22 @@
         <button class="btn-secondary" @click="showForm = false">Cancel</button>
       </div>
     </div>
-
+    <!-- Search -->
+    <div class="search-bar">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search products by name or category..."
+      />
+    </div>
     <!-- Products List -->
     <em v-if="loading">Loading products...</em>
     <div v-else>
-      <div v-if="products.length === 0" class="empty-state">
+      <div v-if="filteredProducts.length === 0" class="empty-state">
         No products yet. Add your first product!
       </div>
       <div v-else class="products-grid">
-        <div v-for="product in products" :key="product.id" class="product-card">
+        <div v-for="product in filteredProducts" :key="product.id" class="product-card">
           <div class="product-icon">🍞</div>
           <div class="product-info">
             <h3>{{ product.name }}</h3>
@@ -73,6 +80,7 @@ export default {
       formError: '',
       successMessage: '',
       showForm: false,
+      searchQuery: '',
       newProduct: {
         name: '',
         category: '',
@@ -80,6 +88,17 @@ export default {
       },
     }
   },
+  computed: {
+    filteredProducts() {
+      if (!this.searchQuery) return this.products
+      return this.products.filter(
+        (product) =>
+          product.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+          product.category.toLowerCase().includes(this.searchQuery.toLowerCase()),
+      )
+    },
+  },
+
   methods: {
     loadProducts() {
       axios
@@ -304,5 +323,22 @@ export default {
   color: #4caf50;
   margin-top: 0.5rem;
   font-size: 0.9rem;
+}
+.search-bar {
+  margin-bottom: 1.5rem;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #6b4226;
 }
 </style>

@@ -1,8 +1,36 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h1>🎁 Donations</h1>
+      <h1>Donations</h1>
       <button class="btn-primary" @click="showForm = !showForm">+ Log Donation</button>
+    </div>
+
+    <!-- Real Charities Section -->
+    <div class="charities-card">
+      <h2>Partner Charities</h2>
+      <p class="charities-subtitle">Find a local charity to donate your surplus baked goods to</p>
+      <div class="charities-grid">
+        <a
+          href="https://www.trusselltrust.org/get-help/find-a-foodbank/"
+          target="_blank"
+          class="charity-link"
+        >
+          <div class="charity-name">Trussell Trust Food Banks</div>
+          <div class="charity-desc">Find your nearest food bank</div>
+        </a>
+        <a href="https://fareshare.org.uk/" target="_blank" class="charity-link">
+          <div class="charity-name">FareShare</div>
+          <div class="charity-desc">UK food redistribution charity</div>
+        </a>
+        <a href="https://www.olio.com/" target="_blank" class="charity-link">
+          <div class="charity-name">OLIO</div>
+          <div class="charity-desc">Share surplus food with neighbours</div>
+        </a>
+        <a href="https://toogoodtogo.com/en-gb" target="_blank" class="charity-link">
+          <div class="charity-name">Too Good To Go</div>
+          <div class="charity-desc">Sell surplus food at reduced price</div>
+        </a>
+      </div>
     </div>
 
     <!-- Add Donation Form -->
@@ -26,7 +54,7 @@
         <input
           v-model="newDonation.charity_name"
           type="text"
-          placeholder="e.g. Food Bank Manchester"
+          placeholder="e.g. Trussell Trust Food Bank"
         />
       </div>
       <div class="form-group">
@@ -41,12 +69,15 @@
       </div>
     </div>
 
+    <!-- Search -->
+    <div class="search-bar">
+      <input v-model="searchQuery" type="text" placeholder="Search by product name or charity..." />
+    </div>
+
     <!-- Donations List -->
     <em v-if="loading">Loading donations...</em>
     <div v-else>
-      <div v-if="donations.length === 0" class="empty-state">
-        No donations recorded yet. Log your first donation!
-      </div>
+      <div v-if="filteredDonations.length === 0" class="empty-state">No donations found.</div>
       <div v-else class="table-container">
         <table class="data-table">
           <thead>
@@ -58,7 +89,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="donation in donations" :key="donation.id">
+            <tr v-for="donation in filteredDonations" :key="donation.id">
               <td>{{ donation.product_name }}</td>
               <td class="qty-donated">{{ donation.quantity }}</td>
               <td>{{ donation.charity_name }}</td>
@@ -88,6 +119,7 @@ export default {
       formError: '',
       successMessage: '',
       showForm: false,
+      searchQuery: '',
       newDonation: {
         product_id: '',
         quantity: '',
@@ -95,6 +127,17 @@ export default {
         date: new Date().toISOString().split('T')[0],
       },
     }
+  },
+  computed: {
+    filteredDonations() {
+      if (!this.searchQuery) return this.donations
+      const query = this.searchQuery.toLowerCase()
+      return this.donations.filter(
+        (donation) =>
+          donation.product_name.toLowerCase().includes(query) ||
+          donation.charity_name.toLowerCase().includes(query),
+      )
+    },
   },
   methods: {
     loadDonations() {
@@ -173,6 +216,57 @@ export default {
   color: #6b4226;
 }
 
+.charities-card {
+  background: #fffdf9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  border-left: 4px solid #4caf50;
+}
+
+.charities-card h2 {
+  color: #6b4226;
+  margin-bottom: 0.25rem;
+}
+
+.charities-subtitle {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.charities-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.charity-link {
+  background: #f5f0e8;
+  border-radius: 8px;
+  padding: 1rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  display: block;
+}
+
+.charity-link:hover {
+  background-color: #e8e0d0;
+}
+
+.charity-name {
+  font-weight: 600;
+  color: #6b4226;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.charity-desc {
+  font-size: 0.8rem;
+  color: #888;
+}
+
 .btn-primary {
   background-color: #6b4226;
   color: white;
@@ -245,6 +339,24 @@ export default {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+}
+
+.search-bar {
+  margin-bottom: 1.5rem;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #6b4226;
 }
 
 .table-container {

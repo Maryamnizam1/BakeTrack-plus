@@ -5,7 +5,33 @@
       <h1>Welcome to BakeTrack+ 🍞</h1>
       <p>Here's your bakery overview for today — {{ today }}</p>
     </div>
-
+    <!-- Price Reduction Alert -->
+    <div v-if="showPriceAlert" class="price-alert">
+      <div class="price-alert-content">
+        <div class="price-alert-icon">⚠️</div>
+        <div class="price-alert-text">
+          <h3>Last 2 Hours — Time to Reduce Prices!</h3>
+          <p>
+            It's {{ currentTime }} and your bakery closes at 6:00 PM. Consider discounting unsold
+            items to avoid waste.
+          </p>
+          <div class="price-suggestions" v-if="priceSuggestions.length">
+            <div
+              v-for="suggestion in priceSuggestions"
+              :key="suggestion.product_id"
+              class="price-suggestion-item"
+            >
+              <span class="suggestion-name">{{ suggestion.product_name }}</span>
+              <span class="suggestion-action"
+                >Reduce by {{ suggestion.discount }}% — estimated {{ suggestion.unsold }} units
+                unsold</span
+              >
+            </div>
+          </div>
+        </div>
+        <button class="price-alert-close" @click="showPriceAlert = false">✕</button>
+      </div>
+    </div>
     <!-- Summary Cards -->
     <div class="stats-grid">
       <div class="stat-card">
@@ -149,11 +175,15 @@ export default {
         donations: true,
       },
       error: '',
+      showPriceAlert: false,
+      currentTime: '',
+      priceSuggestions: [],
+      closingHour: 18,
+      alertHour: new Date().getHours(),
     }
   },
   methods: {
     loadDashboard() {
-      // Load products count
       axios
         .get(`${API}/products`)
         .then((res) => {
@@ -163,7 +193,6 @@ export default {
           this.error = 'Failed to load products'
         })
 
-      // Load sales
       axios
         .get(`${API}/sales`)
         .then((res) => {
@@ -176,7 +205,6 @@ export default {
           this.loading.sales = false
         })
 
-      // Load waste
       axios
         .get(`${API}/waste`)
         .then((res) => {
@@ -189,7 +217,6 @@ export default {
           this.loading.waste = false
         })
 
-      // Load donations
       axios
         .get(`${API}/donations`)
         .then((res) => {
@@ -202,7 +229,6 @@ export default {
           this.loading.donations = false
         })
 
-      // Load forecast for today
       const todayDate = new Date().toISOString().split('T')[0]
       axios
         .get(`${API}/forecast?date=${todayDate}`)
@@ -215,9 +241,51 @@ export default {
           this.loading.forecast = false
         })
     },
+    checkPriceAlert() {
+      const now = new Date()
+      const hour = now.getHours()
+      this.currentTime = now.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+      if (hour >= this.alertHour && hour < this.closingHour) {
+        this.showPriceAlert = true
+        this.generatePriceSuggestions()
+      }
+    },
+    generatePriceSuggestions() {
+      axios
+        .get(`${API}/sales`)
+        .then((res) => {
+          const today = new Date().toISOString().split('T')[0]
+          const todaySales = res.data.filter((s) => s.date === today)
+          axios
+            .get(`${API}/products`)
+            .then((prodRes) => {
+              this.priceSuggestions = prodRes.data
+                .map((product) => {
+                  const sale = todaySales.find((s) => s.product_id === product.id)
+                  const sold = sale ? sale.quantity_sold : 0
+                  const unsold = Math.max(product.batch_size - sold, 0)
+                  const hoursLeft = this.closingHour - new Date().getHours()
+                  const discount = hoursLeft <= 1 ? 50 : 30
+                  return {
+                    product_id: product.id,
+                    product_name: product.name,
+                    unsold: unsold,
+                    discount: discount,
+                  }
+                })
+                .filter((s) => s.unsold > 0)
+            })
+            .catch(() => {})
+        })
+        .catch(() => {})
+    },
   },
   created() {
     this.loadDashboard()
+    this.checkPriceAlert()
   },
 }
 </script>
@@ -381,5 +449,81 @@ export default {
   color: #e53935;
   text-align: center;
   margin-top: 1rem;
+}
+.price-alert {
+  background: linear-gradient(135deg, #f4a623, #e09520);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(244, 166, 35, 0.3);
+}
+
+.price-alert-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.price-alert-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.price-alert-text {
+  flex: 1;
+}
+
+.price-alert-text h3 {
+  color: #2c2c2c;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.price-alert-text p {
+  color: #2c2c2c;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 0.75rem;
+}
+
+.price-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.price-suggestion-item {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.suggestion-name {
+  font-weight: 600;
+  color: #2c2c2c;
+}
+
+.suggestion-action {
+  color: #2c2c2c;
+  opacity: 0.85;
+}
+
+.price-alert-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #2c2c2c;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.price-alert-close:hover {
+  opacity: 1;
 }
 </style>

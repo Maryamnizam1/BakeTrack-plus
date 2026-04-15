@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h1>🗑️ Waste</h1>
+      <h1>Waste</h1>
       <button class="btn-primary" @click="showForm = !showForm">+ Log Waste</button>
     </div>
 
@@ -43,10 +43,15 @@
       </div>
     </div>
 
+    <!-- Search -->
+    <div class="search-bar">
+      <input v-model="searchQuery" type="text" placeholder="Search by product name or reason..." />
+    </div>
+
     <!-- Waste List -->
     <em v-if="loading">Loading waste records...</em>
     <div v-else>
-      <div v-if="wasteRecords.length === 0" class="empty-state">No waste recorded yet!</div>
+      <div v-if="filteredWaste.length === 0" class="empty-state">No waste records found.</div>
       <div v-else class="table-container">
         <table class="data-table">
           <thead>
@@ -55,17 +60,46 @@
               <th>Quantity Wasted</th>
               <th>Reason</th>
               <th>Date</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="waste in wasteRecords" :key="waste.id">
+            <tr v-for="waste in filteredWaste" :key="waste.id">
               <td>{{ waste.product_name }}</td>
               <td class="qty-wasted">{{ waste.quantity_wasted }}</td>
               <td>{{ waste.reason }}</td>
               <td>{{ waste.date }}</td>
+              <td>
+                <button class="btn-donate" @click="donateWaste(waste)">Donate</button>
+              </td>
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Donate Modal -->
+    <div v-if="showDonateModal" class="modal-overlay">
+      <div class="modal">
+        <h2>Donate Unsold Items</h2>
+        <p>
+          Donating <strong>{{ donatingWaste.quantity_wasted }}</strong> units of
+          <strong>{{ donatingWaste.product_name }}</strong>
+        </p>
+        <div class="form-group">
+          <label>Charity Name</label>
+          <input v-model="donationCharity" type="text" placeholder="e.g. Food Bank Manchester" />
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input v-model="donationDate" type="date" />
+        </div>
+        <div v-if="donateError" class="error-message">{{ donateError }}</div>
+        <div v-if="donateSuccess" class="success-message">{{ donateSuccess }}</div>
+        <div class="form-actions">
+          <button class="btn-primary" @click="confirmDonation">Confirm Donation</button>
+          <button class="btn-secondary" @click="showDonateModal = false">Cancel</button>
+        </div>
       </div>
     </div>
 
@@ -88,6 +122,13 @@ export default {
       formError: '',
       successMessage: '',
       showForm: false,
+      searchQuery: '',
+      showDonateModal: false,
+      donatingWaste: {},
+      donationCharity: '',
+      donationDate: new Date().toISOString().split('T')[0],
+      donateError: '',
+      donateSuccess: '',
       newWaste: {
         product_id: '',
         quantity_wasted: '',
@@ -95,6 +136,17 @@ export default {
         reason: '',
       },
     }
+  },
+  computed: {
+    filteredWaste() {
+      if (!this.searchQuery) return this.wasteRecords
+      const query = this.searchQuery.toLowerCase()
+      return this.wasteRecords.filter(
+        (waste) =>
+          waste.product_name.toLowerCase().includes(query) ||
+          waste.reason.toLowerCase().includes(query),
+      )
+    },
   },
   methods: {
     loadWaste() {
@@ -146,6 +198,37 @@ export default {
         })
         .catch(() => {
           this.formError = 'Failed to log waste'
+        })
+    },
+    donateWaste(waste) {
+      this.donatingWaste = waste
+      this.showDonateModal = true
+      this.donateError = ''
+      this.donateSuccess = ''
+    },
+    confirmDonation() {
+      if (!this.donationCharity) {
+        this.donateError = 'Please enter a charity name'
+        return
+      }
+
+      axios
+        .post(`${API}/donations`, {
+          product_id: this.donatingWaste.product_id,
+          quantity: this.donatingWaste.quantity_wasted,
+          charity_name: this.donationCharity,
+          date: this.donationDate,
+        })
+        .then(() => {
+          this.donateSuccess = 'Donation logged successfully!'
+          this.donationCharity = ''
+          setTimeout(() => {
+            this.showDonateModal = false
+            this.donateSuccess = ''
+          }, 1500)
+        })
+        .catch(() => {
+          this.donateError = 'Failed to log donation'
         })
     },
   },
@@ -200,6 +283,22 @@ export default {
   font-weight: 600;
 }
 
+.btn-donate {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.btn-donate:hover {
+  background-color: #388e3c;
+}
+
 .form-card {
   background: #fffdf9;
   border-radius: 12px;
@@ -245,6 +344,24 @@ export default {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+}
+
+.search-bar {
+  margin-bottom: 1.5rem;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #6b4226;
 }
 
 .table-container {
@@ -301,5 +418,35 @@ export default {
   color: #4caf50;
   margin-top: 0.5rem;
   font-size: 0.9rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #fffdf9;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal h2 {
+  color: #6b4226;
+  margin-bottom: 1rem;
+}
+
+.modal p {
+  margin-bottom: 1rem;
+  color: #888;
+  font-size: 0.95rem;
 }
 </style>

@@ -182,4 +182,9 @@ body {
   background-color: #e53935;
   border-color: #e53935;
 }
+.page-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
 </style>

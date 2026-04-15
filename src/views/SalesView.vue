@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <h1>💰 Sales</h1>
+      <h1>Sales</h1>
       <button class="btn-primary" @click="showForm = !showForm">+ Log Sale</button>
     </div>
 
@@ -33,12 +33,19 @@
       </div>
     </div>
 
+    <!-- Search -->
+    <div class="search-bar">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search by product name or day of week..."
+      />
+    </div>
+
     <!-- Sales List -->
     <em v-if="loading">Loading sales...</em>
     <div v-else>
-      <div v-if="sales.length === 0" class="empty-state">
-        No sales recorded yet. Log your first sale!
-      </div>
+      <div v-if="filteredSales.length === 0" class="empty-state">No sales found.</div>
       <div v-else class="table-container">
         <table class="data-table">
           <thead>
@@ -50,7 +57,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="sale in sales" :key="sale.id">
+            <tr v-for="sale in filteredSales" :key="sale.id">
               <td>{{ sale.product_name }}</td>
               <td class="qty-sold">{{ sale.quantity_sold }}</td>
               <td>{{ sale.date }}</td>
@@ -80,6 +87,7 @@ export default {
       formError: '',
       successMessage: '',
       showForm: false,
+      searchQuery: '',
       newSale: {
         product_id: '',
         quantity_sold: '',
@@ -87,6 +95,18 @@ export default {
       },
     }
   },
+  computed: {
+    filteredSales() {
+      if (!this.searchQuery) return this.sales
+      const query = this.searchQuery.toLowerCase()
+      return this.sales.filter(
+        (sale) =>
+          sale.product_name.toLowerCase().includes(query) ||
+          sale.day_of_week.toLowerCase().includes(query),
+      )
+    },
+  },
+
   methods: {
     loadSales() {
       axios
@@ -291,5 +311,22 @@ export default {
   color: #4caf50;
   margin-top: 0.5rem;
   font-size: 0.9rem;
+}
+.search-bar {
+  margin-bottom: 1.5rem;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #6b4226;
 }
 </style>
