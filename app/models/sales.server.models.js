@@ -1,14 +1,13 @@
-const db = require('../../database');
-
+const pool = require('../../database');
+ 
 const create = (product_id, quantity_sold, date, done) => {
     const day_of_week = new Date(date).toLocaleDateString('en-GB', { weekday: 'long' });
-    const sql = 'INSERT INTO sales (product_id, quantity_sold, date, day_of_week) VALUES (?, ?, ?, ?)';
-    db.run(sql, [product_id, quantity_sold, date, day_of_week], function(err) {
-        if (err) return done(err);
-        return done(null, this.lastID);
-    });
+    const sql = 'INSERT INTO sales (product_id, quantity_sold, date, day_of_week) VALUES ($1, $2, $3, $4) RETURNING id';
+    pool.query(sql, [product_id, quantity_sold, date, day_of_week])
+        .then(result => done(null, result.rows[0].id))
+        .catch(err => done(err));
 };
-
+ 
 const getAll = (done) => {
     const sql = `
         SELECT sales.*, products.name AS product_name
@@ -16,26 +15,24 @@ const getAll = (done) => {
         JOIN products ON sales.product_id = products.id
         ORDER BY sales.date DESC
     `;
-    db.all(sql, [], (err, rows) => {
-        if (err) return done(err);
-        return done(null, rows);
-    });
+    pool.query(sql)
+        .then(result => done(null, result.rows))
+        .catch(err => done(err));
 };
-
+ 
 const getByProduct = (product_id, done) => {
     const sql = `
         SELECT sales.*, products.name AS product_name
         FROM sales
         JOIN products ON sales.product_id = products.id
-        WHERE sales.product_id = ?
+        WHERE sales.product_id = $1
         ORDER BY sales.date DESC
     `;
-    db.all(sql, [product_id], (err, rows) => {
-        if (err) return done(err);
-        return done(null, rows);
-    });
+    pool.query(sql, [product_id])
+        .then(result => done(null, result.rows))
+        .catch(err => done(err));
 };
-
+ 
 const getSummaryByProduct = (done) => {
     const sql = `
         SELECT 
@@ -46,15 +43,14 @@ const getSummaryByProduct = (done) => {
             COUNT(sales.id) AS num_records
         FROM sales
         JOIN products ON sales.product_id = products.id
-        GROUP BY products.id
+        GROUP BY products.id, products.name
         ORDER BY total_sold DESC
     `;
-    db.all(sql, [], (err, rows) => {
-        if (err) return done(err);
-        return done(null, rows);
-    });
+    pool.query(sql)
+        .then(result => done(null, result.rows))
+        .catch(err => done(err));
 };
-
+ 
 module.exports = {
     create: create,
     getAll: getAll,
