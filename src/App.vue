@@ -187,4 +187,24 @@ body {
   margin: 0 auto;
   padding: 2rem;
 }
+
+@media (max-width: 768px) {
+  .navbar {
+    height: auto;
+    padding: 0.8rem 1rem;
+  }
+  .navbar-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .navbar-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .navbar-links a {
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+  }
+}
 </style>
