@@ -12,8 +12,8 @@
         <div class="price-alert-text">
           <h3>Last 2 Hours — Time to Reduce Prices!</h3>
           <p>
-            It's {{ currentTime }} and your bakery closes at 6:00 PM. Consider discounting unsold
-            items to avoid waste.
+            It's {{ currentTime }} and your bakery closes at 6:00 PM. Consider discounting the
+            following items to reduce waste.
           </p>
           <div class="price-suggestions" v-if="priceSuggestions.length">
             <div
@@ -22,10 +22,7 @@
               class="price-suggestion-item"
             >
               <span class="suggestion-name">{{ suggestion.product_name }}</span>
-              <span class="suggestion-action"
-                >Reduce by {{ suggestion.discount }}% — estimated {{ suggestion.unsold }} units
-                unsold</span
-              >
+              <span class="suggestion-action">Reduce by {{ suggestion.discount }}%</span>
             </div>
           </div>
         </div>
@@ -255,30 +252,17 @@ export default {
     },
     generatePriceSuggestions() {
       axios
-        .get(`${API}/sales`)
-        .then((res) => {
-          const today = new Date().toISOString().split('T')[0]
-          const todaySales = res.data.filter((s) => s.date === today)
-          axios
-            .get(`${API}/products`)
-            .then((prodRes) => {
-              this.priceSuggestions = prodRes.data
-                .map((product) => {
-                  const sale = todaySales.find((s) => s.product_id === product.id)
-                  const sold = sale ? sale.quantity_sold : 0
-                  const unsold = Math.max(product.batch_size - sold, 0)
-                  const hoursLeft = this.closingHour - new Date().getHours()
-                  const discount = hoursLeft <= 1 ? 50 : 30
-                  return {
-                    product_id: product.id,
-                    product_name: product.name,
-                    unsold: unsold,
-                    discount: discount,
-                  }
-                })
-                .filter((s) => s.unsold > 0)
-            })
-            .catch(() => {})
+        .get(`${API}/products`)
+        .then((prodRes) => {
+          const hoursLeft = this.closingHour - new Date().getHours()
+          const discount = hoursLeft <= 1 ? 50 : 30
+          this.priceSuggestions = prodRes.data.map((product) => {
+            return {
+              product_id: product.id,
+              product_name: product.name,
+              discount: discount,
+            }
+          })
         })
         .catch(() => {})
     },
@@ -525,5 +509,17 @@ export default {
 
 .price-alert-close:hover {
   opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .welcome-banner h1 {
+    font-size: 1.4rem;
+  }
 }
 </style>

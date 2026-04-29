@@ -24,6 +24,20 @@
           <div class="forecast-summary">
             <h2>Forecast for {{ formattedDate }} — {{ dayOfWeek }}</h2>
           </div>
+
+          <!-- Charts Section -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3>📊 Recommended Production Quantities</h3>
+              <div ref="recommendedChart" class="chart-container"></div>
+            </div>
+            <div class="chart-card">
+              <h3>📈 Sales vs Waste vs Recommended</h3>
+              <div ref="comparisonChart" class="chart-container"></div>
+            </div>
+          </div>
+
+          <!-- Forecast Cards -->
           <div class="forecast-grid">
             <div v-for="forecast in forecasts" :key="forecast.product_id" class="forecast-card">
               <div class="forecast-header">
@@ -44,6 +58,14 @@
                   <span class="stat-value waste">{{ forecast.avg_daily_waste }}</span>
                 </div>
                 <div class="stat-row">
+                  <span class="stat-label">Day Multiplier</span>
+                  <span class="stat-value">{{ forecast.day_multiplier }}x</span>
+                </div>
+                <div class="stat-row">
+                  <span class="stat-label">Season Multiplier</span>
+                  <span class="stat-value">{{ forecast.seasonality_multiplier }}x</span>
+                </div>
+                <div class="stat-row">
                   <span class="stat-label">Data Points</span>
                   <span class="stat-value">{{ forecast.data_points_used }}</span>
                 </div>
@@ -60,6 +82,7 @@
 
 <script>
 import axios from 'axios'
+import * as echarts from 'echarts'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -70,6 +93,8 @@ export default {
       loading: false,
       error: '',
       selectedDate: new Date().toISOString().split('T')[0],
+      recommendedChartInstance: null,
+      comparisonChartInstance: null,
     }
   },
   computed: {
@@ -95,15 +120,183 @@ export default {
         .then((res) => {
           this.forecasts = res.data
           this.loading = false
+          this.$nextTick(() => {
+            this.renderCharts()
+          })
         })
         .catch(() => {
           this.error = 'Failed to load forecast'
           this.loading = false
         })
     },
+    renderCharts() {
+      this.renderRecommendedChart()
+      this.renderComparisonChart()
+    },
+    renderRecommendedChart() {
+      if (this.recommendedChartInstance) {
+        this.recommendedChartInstance.dispose()
+      }
+      const chartDom = this.$refs.recommendedChart
+      if (!chartDom) return
+
+      this.recommendedChartInstance = echarts.init(chartDom)
+
+      const names = this.forecasts.map((f) => f.product_name)
+      const quantities = this.forecasts.map((f) => f.recommended_quantity)
+
+      const option = {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '15%',
+          containLabel: true,
+        },
+        xAxis: {
+          type: 'category',
+          data: names,
+          axisLabel: {
+            rotate: names.length > 4 ? 30 : 0,
+            fontSize: 11,
+            color: '#6b4226',
+          },
+          axisLine: { lineStyle: { color: '#ddd' } },
+        },
+        yAxis: {
+          type: 'value',
+          name: 'Units',
+          nameTextStyle: { color: '#888', fontSize: 11 },
+          axisLabel: { color: '#888' },
+          axisLine: { lineStyle: { color: '#ddd' } },
+          splitLine: { lineStyle: { color: '#f0ebe3' } },
+        },
+        series: [
+          {
+            name: 'Recommended',
+            type: 'bar',
+            data: quantities,
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                { offset: 0, color: '#f4a623' },
+                { offset: 1, color: '#e09520' },
+              ]),
+              borderRadius: [6, 6, 0, 0],
+            },
+            barMaxWidth: 50,
+            label: {
+              show: true,
+              position: 'top',
+              fontWeight: 'bold',
+              color: '#6b4226',
+              fontSize: 13,
+            },
+          },
+        ],
+      }
+
+      this.recommendedChartInstance.setOption(option)
+    },
+    renderComparisonChart() {
+      if (this.comparisonChartInstance) {
+        this.comparisonChartInstance.dispose()
+      }
+      const chartDom = this.$refs.comparisonChart
+      if (!chartDom) return
+
+      this.comparisonChartInstance = echarts.init(chartDom)
+
+      const names = this.forecasts.map((f) => f.product_name)
+      const avgSales = this.forecasts.map((f) => f.avg_daily_sales)
+      const avgWaste = this.forecasts.map((f) => f.avg_daily_waste)
+      const recommended = this.forecasts.map((f) => f.recommended_quantity)
+
+      const option = {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+        },
+        legend: {
+          data: ['Avg Sales', 'Avg Waste', 'Recommended'],
+          bottom: 0,
+          textStyle: { color: '#888', fontSize: 11 },
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '15%',
+          containLabel: true,
+        },
+        xAxis: {
+          type: 'category',
+          data: names,
+          axisLabel: {
+            rotate: names.length > 4 ? 30 : 0,
+            fontSize: 11,
+            color: '#6b4226',
+          },
+          axisLine: { lineStyle: { color: '#ddd' } },
+        },
+        yAxis: {
+          type: 'value',
+          name: 'Units',
+          nameTextStyle: { color: '#888', fontSize: 11 },
+          axisLabel: { color: '#888' },
+          axisLine: { lineStyle: { color: '#ddd' } },
+          splitLine: { lineStyle: { color: '#f0ebe3' } },
+        },
+        series: [
+          {
+            name: 'Avg Sales',
+            type: 'bar',
+            data: avgSales,
+            itemStyle: {
+              color: '#6b4226',
+              borderRadius: [4, 4, 0, 0],
+            },
+            barMaxWidth: 35,
+          },
+          {
+            name: 'Avg Waste',
+            type: 'bar',
+            data: avgWaste,
+            itemStyle: {
+              color: '#e53935',
+              borderRadius: [4, 4, 0, 0],
+            },
+            barMaxWidth: 35,
+          },
+          {
+            name: 'Recommended',
+            type: 'bar',
+            data: recommended,
+            itemStyle: {
+              color: '#f4a623',
+              borderRadius: [4, 4, 0, 0],
+            },
+            barMaxWidth: 35,
+          },
+        ],
+      }
+
+      this.comparisonChartInstance.setOption(option)
+    },
+    handleResize() {
+      if (this.recommendedChartInstance) this.recommendedChartInstance.resize()
+      if (this.comparisonChartInstance) this.comparisonChartInstance.resize()
+    },
   },
   mounted() {
     this.loadForecast()
+    window.addEventListener('resize', this.handleResize)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.handleResize)
+    if (this.recommendedChartInstance) this.recommendedChartInstance.dispose()
+    if (this.comparisonChartInstance) this.comparisonChartInstance.dispose()
   },
 }
 </script>
@@ -188,6 +381,35 @@ export default {
   font-size: 1.2rem;
 }
 
+/* Charts */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-card {
+  background: #fffdf9;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.chart-card h3 {
+  font-size: 1rem;
+  color: #6b4226;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f5f0e8;
+}
+
+.chart-container {
+  width: 100%;
+  height: 320px;
+}
+
+/* Forecast Cards */
 .forecast-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -278,5 +500,17 @@ export default {
   color: #e53935;
   margin-top: 0.5rem;
   font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  .forecast-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart-container {
+    height: 250px;
+  }
 }
 </style>
