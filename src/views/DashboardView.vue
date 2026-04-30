@@ -176,7 +176,7 @@ export default {
       currentTime: '',
       priceSuggestions: [],
       closingHour: 18,
-      alertHour: new Date().getHours(),
+      alertHour: 0,
     }
   },
   methods: {
@@ -240,12 +240,11 @@ export default {
     },
     checkPriceAlert() {
       const now = new Date()
-      const hour = now.getHours()
       this.currentTime = now.toLocaleTimeString('en-GB', {
         hour: '2-digit',
         minute: '2-digit',
       })
-      if (hour >= this.alertHour && hour < this.closingHour) {
+      if (true) {
         this.showPriceAlert = true
         this.generatePriceSuggestions()
       }
@@ -434,6 +433,7 @@ export default {
   text-align: center;
   margin-top: 1rem;
 }
+
 .price-alert {
   background: linear-gradient(135deg, #f4a623, #e09520);
   border-radius: 12px;
